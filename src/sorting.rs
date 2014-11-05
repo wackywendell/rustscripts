@@ -350,6 +350,38 @@ fn test_mergesort(){
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Selection sort
+
+/// The selection sort algorithm.
+pub fn selsort<T : Ord>(slice : &mut [T]){
+	if slice.len() < 2 {return}
+
+	let mut min = 0;
+	for i in range(1, slice.len()){
+		if slice[i] < slice[min] {
+			min = i;
+		}
+	}
+	slice.swap(0, min);
+
+	selsort(slice.slice_from_mut(1));
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Selection sort Tests
+
+#[test]
+fn test_selectionsort(){
+	let mut test_slices = get_test_vecs();
+	
+	for test_vec in test_slices.iter_mut(){
+		let test_slice = test_vec.as_mut_slice();
+		selsort(test_slice);
+		assert!(is_sorted(test_slice));
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // Bubblesort
 
 /// The bubblesort algorithm.
