@@ -33,10 +33,9 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 	println!("Got wordlist, length {}", wordlist.len());
 	
 	let iter = wordlist.iter().filter(|k| {
-		let kslice = k.as_slice();
-		if kslice.char_len() == 0 {false}
-		else if kslice.contains("\'") {false}
-		else if kslice.find(|c : char|{!c.is_lowercase()}).is_some() {false}
+		if k.char_len() == 0 {false}
+		else if k.contains("\'") {false}
+		else if k.find(|c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
 	});
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
@@ -208,7 +207,7 @@ pub fn main(){
     let file = match File::open(&path) {
 		Ok(f) => f,
 		Err(std::io::IoError{kind: std::io::FileNotFound, desc: _, detail: _}) => {
-			let _ = writeln!(std::io::stderr(), "File not found: {}", pathstr);
+			let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
 			std::os::set_exit_status(-1);
 			return;
 		}
@@ -220,11 +219,11 @@ pub fn main(){
     let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
     
     let lines: Vec<String> = file.lines().map(|orl| {
-		let unwrapl = match orl {
+		let unwrapl : String = match orl {
 			Ok(l) => l,
 			Err(e) => panic!("Failed reading file: {}", e)
 		};
-		unwrapl.as_slice().trim_chars(trimchars).to_string()
+		unwrapl.trim_chars(trimchars).to_string()
 	}).collect();
     let mut wb = WordBuilder::new(lines, subsetn);
     
