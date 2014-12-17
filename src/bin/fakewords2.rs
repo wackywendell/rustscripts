@@ -35,7 +35,7 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 	let iter = wordlist.iter().filter(|k| {
 		if k.char_len() == 0 {false}
 		else if k.contains("\'") {false}
-		else if k.find(|c : char|{!c.is_lowercase()}).is_some() {false}
+		else if k.find(|&: c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
 	});
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
