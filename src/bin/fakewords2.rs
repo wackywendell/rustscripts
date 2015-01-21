@@ -1,9 +1,12 @@
-#![feature(phase)]
-extern crate serialize;
+#![feature(plugin)]
 
-#[phase(plugin)]
-extern crate docopt_macros;
+extern crate "rustc-serialize" as rustc_serialize;
+
 extern crate docopt;
+
+#[plugin]
+#[no_link]
+extern crate docopt_macros;
 
 extern crate rustscripts;
 
@@ -25,15 +28,17 @@ use std::collections::{HashSet,HashMap};
 use std::rand;
 use std::rand::Rng;
 use std::io::{File,BufferedReader};
+use std::slice::AsSlice;
+//use std::iter::{FromIterator,IteratorExt};
 
 use rustscripts::counter;
 
 //* Build a HashMap of "substring" : "number of occurrences"
-fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
+fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	println!("Got wordlist, length {}", wordlist.len());
 	
 	let iter = wordlist.iter().filter(|k| {
-		if k.char_len() == 0 {false}
+		if k.chars().count() == 0 {false}
 		else if k.contains("\'") {false}
 		else if k.find(|&: c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
@@ -41,12 +46,12 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
 	let iter = iter.flat_map(|k| {
 		let kslice = k.as_slice();
-		let fullword = (["^", kslice.trim_chars(trimchars), "$"]).concat();
-        let fullchars : Vec<char> = fullword.as_slice().chars().collect();
+		let fullword : String = (["^", kslice.trim_matches(trimchars), "$"]).concat();
+        let fullchars : Vec<char> = fullword.chars().collect();
         
         let chvec : Vec<String> =  
-		fullchars.as_slice().windows(sublens).map(|chars| {
-			String::from_chars(chars)
+		fullchars.windows(sublens as usize).map(|chars| {
+			chars.iter().map(|&x| x).collect::<String>()
 		})
 		.collect();
 		
@@ -58,11 +63,11 @@ fn to_hashes(wordlist : &[String], sublens : uint) -> HashMap<String, uint> {
 }
 
 struct WordBuilder {
-    subs : HashMap<String, uint>,
+    subs : HashMap<String, u32>,
     // list : Vec<String>,
-    // sublens : uint,
+    // sublens : u32,
     wordset : HashSet<String>,
-    wordlens : Vec<uint>
+    wordlens : Vec<u32>
 }
 
 struct WordIter<'a> {
@@ -70,9 +75,9 @@ struct WordIter<'a> {
 }
 
 impl WordBuilder {
-    fn new(list : Vec<String>, sublens : uint) -> WordBuilder {
+    fn new(list : Vec<String>, sublens : u32) -> WordBuilder {
         let mut h = HashSet::new();
-        let mut wlens : Vec<uint> = Vec::new();
+        let mut wlens : Vec<u32> = Vec::new();
         for w in list.iter() {
             h.insert(w.to_string());
             let wordlen = w.len();
@@ -95,9 +100,9 @@ impl WordBuilder {
         let mut s : String = "^".to_string();
         
         loop {
-            let mut fullsum = 0u;
-            let mut endsum = 0u;
-            let possibilities : Vec<(&str, uint)> = self.subs.iter().filter_map(
+            let mut fullsum = 0u32;
+            let mut endsum = 0u32;
+            let possibilities : Vec<(&str, u32)> = self.subs.iter().filter_map(
                 |(k,v)| {
                     /* the beginning of k and the end of s must match for
                      * k to be a possibility
@@ -105,9 +110,9 @@ impl WordBuilder {
                      * of k must match the last (klength - 1) letters of s
                      * otherwise, the first (slength) characters
                     */
-                    let slen = s.as_slice().char_len();
+                    let slen = s.as_slice().chars().count();
                     let kslice = k.as_slice();
-                    let klen = kslice.char_len();
+                    let klen = kslice.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
                     if s.as_slice().ends_with(kslice.slice_chars(0, kcut)){
                         fullsum += *v;
@@ -121,7 +126,7 @@ impl WordBuilder {
             }
             
             let endprob = if self.wordlens.len() > s.len() {
-                let wordlenslice : &[uint] = self.wordlens.slice(s.len()-1, self.wordlens.len());
+                let wordlenslice : &[u32] = self.wordlens.slice(s.len()-1, self.wordlens.len());
                 let c = wordlenslice[0];
                 let l = wordlenslice.iter().fold(0, |a,&b|{a+b});
                 (c as f64) / (l as f64)
@@ -130,7 +135,7 @@ impl WordBuilder {
                 return None;
             };
             
-            let randnum = rand::task_rng().gen_range(0.0, 1.0);
+            let randnum = rand::thread_rng().gen_range(0.0, 1.0);
             
             let endtime = randnum < endprob;
             if (endtime && (endsum == 0)) || ((!endtime) && (fullsum-endsum==0)) {
@@ -140,7 +145,7 @@ impl WordBuilder {
             
             //~ println!("endtime: {} {} : ({},{}) {}", endtime, randnum < endprob,
                 //~ endsum, fullsum, if(endtime){endsum} else {fullsum - endsum});
-            let randnum = rand::task_rng().gen_range(0.0, 
+            let randnum = rand::thread_rng().gen_range(0.0, 
                 (if endtime {endsum} else {fullsum - endsum} as f64));
             
             let mut psum = 0;
@@ -149,8 +154,8 @@ impl WordBuilder {
                 if endtime ^ k.ends_with("$") {continue;};
                 
                 if randnum < ((psum + v) as f64) {
-                    let slen = s.as_slice().char_len();
-                    let klen = k.char_len();
+                    let slen = s.as_slice().chars().count();
+                    let klen = k.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
                     //~ let olds = s.to_string();
                     s.push_str(k.slice_chars(kcut,klen));
@@ -159,7 +164,7 @@ impl WordBuilder {
                 psum += v;
             }
             
-            let slen = s.as_slice().char_len();
+            let slen = s.as_slice().chars().count();
             if s.as_slice().slice_chars(slen-1, slen) == "$" {
                 return Some(s.as_slice().slice_chars(1, slen-1).to_string());
             }
@@ -171,7 +176,9 @@ impl WordBuilder {
     }
 }
 
-impl<'a> Iterator<String> for WordIter<'a> {
+impl<'a> Iterator for WordIter<'a> {
+    type Item = String;
+
     fn next(&mut self) -> Option<String> {
         loop {
             let optw = self.p.word();
@@ -192,14 +199,14 @@ Usage: fakewords2 [-h | --help] [-n <number>] [<dictfile>]
 Options:
     -n <number>    use number length substrings for markovian chain
     <dictfile>     use dictfile instead of /usr/share/dict/words
-", flag_n : Option<uint>, arg_dictfile : Option<String>)
+", flag_n : Option<u32>, arg_dictfile : Option<String>);
 
 pub fn main(){
 	let args: Args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
     
-    let flag_n : Option<uint> = args.flag_n;
+    let flag_n : Option<u32> = args.flag_n;
 
-    let subsetn : uint = flag_n.unwrap_or(4u);
+    let subsetn : u32 = flag_n.unwrap_or(4);
     
     let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
     
@@ -223,7 +230,7 @@ pub fn main(){
 			Ok(l) => l,
 			Err(e) => panic!("Failed reading file: {}", e)
 		};
-		unwrapl.trim_chars(trimchars).to_string()
+		unwrapl.trim_matches(trimchars).to_string()
 	}).collect();
     let mut wb = WordBuilder::new(lines, subsetn);
     

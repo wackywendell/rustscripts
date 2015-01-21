@@ -4,8 +4,12 @@ name = "rustscripts"
 version = "0.1.0"
 authors = [ "wackywendell@gmail.com" ]
 
+[dependencies]
+rustc-serialize = "*"
+
 [dependencies.docopt]
 git = "https://github.com/docopt/docopt.rs"
 
 [dependencies.docopt_macros]
 git = "https://github.com/docopt/docopt.rs"
+
