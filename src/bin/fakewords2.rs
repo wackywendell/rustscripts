@@ -27,7 +27,7 @@ use docopt::Docopt;
 use std::collections::{HashSet,HashMap};
 use std::rand;
 use std::rand::Rng;
-use std::io::{File,BufferedReader};
+use std::old_io::{File,BufferedReader};
 use std::slice::AsSlice;
 //use std::iter::{FromIterator,IteratorExt};
 
@@ -49,7 +49,7 @@ fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 		let fullword : String = (["^", kslice.trim_matches(trimchars), "$"]).concat();
         let fullchars : Vec<char> = fullword.chars().collect();
         
-        let chvec : Vec<String> =  
+        let chvec : Vec<String> =
 		fullchars.windows(sublens as usize).map(|chars| {
 			chars.iter().map(|&x| x).collect::<String>()
 		})
@@ -88,8 +88,8 @@ impl WordBuilder {
         }
         
         WordBuilder {
-            subs : to_hashes(list.as_slice(), sublens), 
-            //list : list, 
+            subs : to_hashes(list.as_slice(), sublens),
+            //list : list,
             //sublens : sublens,
             wordset : h,
             wordlens : wlens
@@ -126,7 +126,7 @@ impl WordBuilder {
             }
             
             let endprob = if self.wordlens.len() > s.len() {
-                let wordlenslice : &[u32] = self.wordlens.slice(s.len()-1, self.wordlens.len());
+                let wordlenslice : &[u32] = &(self.wordlens[(s.len()-1)..self.wordlens.len()]);
                 let c = wordlenslice[0];
                 let l = wordlenslice.iter().fold(0, |a,&b|{a+b});
                 (c as f64) / (l as f64)
@@ -145,7 +145,7 @@ impl WordBuilder {
             
             //~ println!("endtime: {} {} : ({},{}) {}", endtime, randnum < endprob,
                 //~ endsum, fullsum, if(endtime){endsum} else {fullsum - endsum});
-            let randnum = rand::thread_rng().gen_range(0.0, 
+            let randnum = rand::thread_rng().gen_range(0.0,
                 (if endtime {endsum} else {fullsum - endsum} as f64));
             
             let mut psum = 0;
@@ -213,8 +213,8 @@ pub fn main(){
     let path = Path::new(pathstr.clone());
     let file = match File::open(&path) {
 		Ok(f) => f,
-		Err(std::io::IoError{kind: std::io::FileNotFound, desc: _, detail: _}) => {
-			let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
+		Err(std::old_io::IoError{kind: std::old_io::FileNotFound, desc: _, detail: _}) => {
+			let _ = writeln!(&mut std::old_io::stderr(), "File not found: {}", pathstr);
 			std::os::set_exit_status(-1);
 			return;
 		}
