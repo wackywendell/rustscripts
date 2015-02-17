@@ -6,10 +6,10 @@ authors = [ "wackywendell@gmail.com" ]
 
 [dependencies]
 rustc-serialize = "*"
+rand = "*"
 
 [dependencies.docopt]
 git = "https://github.com/docopt/docopt.rs"
 
 [dependencies.docopt_macros]
 git = "https://github.com/docopt/docopt.rs"
-

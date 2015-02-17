@@ -1,12 +1,10 @@
 #![feature(plugin)]
+#![plugin(docopt_macros)]
 
 extern crate "rustc-serialize" as rustc_serialize;
 
 extern crate docopt;
-
-#[plugin]
-#[no_link]
-extern crate docopt_macros;
+extern crate rand;
 
 extern crate rustscripts;
 
@@ -24,9 +22,9 @@ extern crate rustscripts;
 
 use docopt::Docopt;
 
+use rand::Rng;
+
 use std::collections::{HashSet,HashMap};
-use std::rand;
-use std::rand::Rng;
 use std::old_io::{File,BufferedReader};
 use std::slice::AsSlice;
 //use std::iter::{FromIterator,IteratorExt};
@@ -215,7 +213,7 @@ pub fn main(){
 		Ok(f) => f,
 		Err(std::old_io::IoError{kind: std::old_io::FileNotFound, desc: _, detail: _}) => {
 			let _ = writeln!(&mut std::old_io::stderr(), "File not found: {}", pathstr);
-			std::os::set_exit_status(-1);
+			std::env::set_exit_status(-1);
 			return;
 		}
 		Err(e) => panic!("failed to open file: {}", e)
