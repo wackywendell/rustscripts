@@ -1,3 +1,6 @@
+#![feature(std_misc)]
+#![feature(test)]
+
 /// Utility functions for my scripts.
 
 #[warn(non_camel_case_types)]
@@ -8,8 +11,6 @@
 
 extern crate test;
 
-use std::hash;
-use std::collections::hash_map;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 

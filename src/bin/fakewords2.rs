@@ -1,3 +1,8 @@
+#![feature(core)]
+#![feature(collections)]
+#![feature(io)]
+#![feature(path)]
+#![feature(exit_status)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
@@ -25,7 +30,9 @@ use docopt::Docopt;
 use rand::Rng;
 
 use std::collections::{HashSet,HashMap};
-use std::old_io::{File,BufferedReader};
+use std::fs::File;
+use std::path::Path;
+use std::io::{Write,BufReadExt,BufReader};
 use std::slice::AsSlice;
 //use std::iter::{FromIterator,IteratorExt};
 
@@ -38,7 +45,7 @@ fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	let iter = wordlist.iter().filter(|k| {
 		if k.chars().count() == 0 {false}
 		else if k.contains("\'") {false}
-		else if k.find(|&: c : char|{!c.is_lowercase()}).is_some() {false}
+		else if k.find(|c : char|{!c.is_lowercase()}).is_some() {false}
 		else {true}
 	});
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
@@ -208,19 +215,21 @@ pub fn main(){
     
     let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
     
-    let path = Path::new(pathstr.clone());
+    let path = Path::new(&pathstr);
     let file = match File::open(&path) {
 		Ok(f) => f,
-		Err(std::old_io::IoError{kind: std::old_io::FileNotFound, desc: _, detail: _}) => {
-			let _ = writeln!(&mut std::old_io::stderr(), "File not found: {}", pathstr);
-			std::env::set_exit_status(-1);
-			return;
+		Err(e) => match e.kind() {
+			std::io::ErrorKind::FileNotFound => {
+				let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
+				std::env::set_exit_status(-1);
+				return;
+			}
+			_ => panic!("failed to open file: {}", e)
 		}
-		Err(e) => panic!("failed to open file: {}", e)
 	};
     
-    let mut file = BufferedReader::new(file);
-    
+	let file = BufReader::new(file);
+	
     let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
     
     let lines: Vec<String> = file.lines().map(|orl| {
