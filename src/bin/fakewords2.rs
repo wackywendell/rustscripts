@@ -1,7 +1,6 @@
 #![feature(core)]
 #![feature(collections)]
 #![feature(io)]
-#![feature(path)]
 #![feature(exit_status)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
@@ -32,7 +31,7 @@ use rand::Rng;
 use std::collections::{HashSet,HashMap};
 use std::fs::File;
 use std::path::Path;
-use std::io::{Write,BufReadExt,BufReader};
+use std::io::{Write,BufRead,BufReader};
 use std::slice::AsSlice;
 //use std::iter::{FromIterator,IteratorExt};
 
