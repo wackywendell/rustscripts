@@ -1,7 +1,4 @@
-#![feature(core)]
-#![feature(collections)]
-#![feature(io)]
-#![feature(exit_status)]
+#![feature(core,collections,exit_status)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
@@ -85,7 +82,7 @@ impl WordBuilder {
         for w in list.iter() {
             h.insert(w.to_string());
             let wordlen = w.len();
-            for _ in range(wlens.len(), wordlen+1){
+            for _ in wlens.len()..wordlen+1 {
                 wlens.push(0);
             }
             wlens[wordlen] += 1;
@@ -218,7 +215,7 @@ pub fn main(){
     let file = match File::open(&path) {
 		Ok(f) => f,
 		Err(e) => match e.kind() {
-			std::io::ErrorKind::FileNotFound => {
+			std::io::ErrorKind::NotFound => {
 				let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
 				std::env::set_exit_status(-1);
 				return;
