@@ -1,8 +1,8 @@
-#![feature(core,collections,exit_status)]
+#![feature(collections,exit_status,convert)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 
 extern crate docopt;
 extern crate rand;
@@ -29,7 +29,7 @@ use std::collections::{HashSet,HashMap};
 use std::fs::File;
 use std::path::Path;
 use std::io::{Write,BufRead,BufReader};
-use std::slice::AsSlice;
+use std::convert::AsRef;
 //use std::iter::{FromIterator,IteratorExt};
 
 use rustscripts::counter;
@@ -46,8 +46,7 @@ fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	});
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
 	let iter = iter.flat_map(|k| {
-		let kslice = k.as_slice();
-		let fullword : String = (["^", kslice.trim_matches(trimchars), "$"]).concat();
+		let fullword : String = (["^", k.trim_matches(trimchars), "$"]).concat();
         let fullchars : Vec<char> = fullword.chars().collect();
         
         let chvec : Vec<String> =
@@ -89,7 +88,7 @@ impl WordBuilder {
         }
         
         WordBuilder {
-            subs : to_hashes(list.as_slice(), sublens),
+            subs : to_hashes(list.as_ref(), sublens),
             //list : list,
             //sublens : sublens,
             wordset : h,
@@ -111,14 +110,13 @@ impl WordBuilder {
                      * of k must match the last (klength - 1) letters of s
                      * otherwise, the first (slength) characters
                     */
-                    let slen = s.as_slice().chars().count();
-                    let kslice = k.as_slice();
-                    let klen = kslice.chars().count();
+                    let slen = s.chars().count();
+                    let klen = k.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
-                    if s.as_slice().ends_with(kslice.slice_chars(0, kcut)){
+                    if s.ends_with(k.slice_chars(0, kcut)){
                         fullsum += *v;
-                        if kslice.ends_with("$") {endsum += *v;}
-                        Some((kslice,*v))
+                        if k.ends_with("$") {endsum += *v;}
+                        Some((k.as_ref(),*v))
                     } else {None}
                 }
             ).collect();
@@ -155,7 +153,7 @@ impl WordBuilder {
                 if endtime ^ k.ends_with("$") {continue;};
                 
                 if randnum < ((psum + v) as f64) {
-                    let slen = s.as_slice().chars().count();
+                    let slen = s.chars().count();
                     let klen = k.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
                     //~ let olds = s.to_string();
@@ -165,9 +163,9 @@ impl WordBuilder {
                 psum += v;
             }
             
-            let slen = s.as_slice().chars().count();
-            if s.as_slice().slice_chars(slen-1, slen) == "$" {
-                return Some(s.as_slice().slice_chars(1, slen-1).to_string());
+            let slen = s.chars().count();
+            if s.slice_chars(slen-1, slen) == "$" {
+                return Some(s.slice_chars(1, slen-1).to_string());
             }
         };
     }
