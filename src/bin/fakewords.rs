@@ -1,4 +1,4 @@
-#![feature(collections,exit_status,convert)]
+#![feature(collections,exit_status)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
@@ -37,7 +37,7 @@ use rustscripts::counter;
 //* Build a HashMap of "substring" : "number of occurrences"
 fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	println!("Got wordlist, length {}", wordlist.len());
-	
+
 	let iter = wordlist.iter().filter(|k| {
 		if k.chars().count() == 0 {false}
 		else if k.contains("\'") {false}
@@ -48,15 +48,15 @@ fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	let iter = iter.flat_map(|k| {
 		let fullword : String = (["^", k.trim_matches(trimchars), "$"]).concat();
         let fullchars : Vec<char> = fullword.chars().collect();
-        
+
         let chvec : Vec<String> =
 		fullchars.windows(sublens as usize).map(|chars| {
 			chars.iter().map(|&x| x).collect::<String>()
 		})
 		.collect();
-		
+
 		//~ println!("k: {}, chvec: {}", k, chvec);
-		
+
 		chvec.into_iter()
 	});
 	counter(iter)
@@ -86,7 +86,7 @@ impl WordBuilder {
             }
             wlens[wordlen] += 1;
         }
-        
+
         WordBuilder {
             subs : to_hashes(list.as_ref(), sublens),
             //list : list,
@@ -95,10 +95,10 @@ impl WordBuilder {
             wordlens : wlens
         }
     }
-    
+
     fn word(&mut self) -> Option<String> {
         let mut s : String = "^".to_string();
-        
+
         loop {
             let mut fullsum = 0u32;
             let mut endsum = 0u32;
@@ -123,7 +123,7 @@ impl WordBuilder {
             if fullsum == 0 {
                 panic!("s: \"{}\"", s);
             }
-            
+
             let endprob = if self.wordlens.len() > s.len() {
                 let wordlenslice : &[u32] = &(self.wordlens[(s.len()-1)..self.wordlens.len()]);
                 let c = wordlenslice[0];
@@ -133,25 +133,25 @@ impl WordBuilder {
                 //~ println!("Too long: {}", s);
                 return None;
             };
-            
+
             let randnum = rand::thread_rng().gen_range(0.0, 1.0);
-            
+
             let endtime = randnum < endprob;
             if (endtime && (endsum == 0)) || ((!endtime) && (fullsum-endsum==0)) {
                 //~ println!("Failed to end: {}", s);
                 return None;
             }
-            
+
             //~ println!("endtime: {} {} : ({},{}) {}", endtime, randnum < endprob,
                 //~ endsum, fullsum, if(endtime){endsum} else {fullsum - endsum});
             let randnum = rand::thread_rng().gen_range(0.0,
                 (if endtime {endsum} else {fullsum - endsum} as f64));
-            
+
             let mut psum = 0;
-            
+
             for &(k,v) in possibilities.iter() {
                 if endtime ^ k.ends_with("$") {continue;};
-                
+
                 if randnum < ((psum + v) as f64) {
                     let slen = s.chars().count();
                     let klen = k.chars().count();
@@ -162,14 +162,14 @@ impl WordBuilder {
                 }
                 psum += v;
             }
-            
+
             let slen = s.chars().count();
             if s.slice_chars(slen-1, slen) == "$" {
                 return Some(s.slice_chars(1, slen-1).to_string());
             }
         };
     }
-    
+
     fn iter<'a>(&'a mut self) -> WordIter<'a> {
         WordIter{p:self}
     }
@@ -202,13 +202,13 @@ Options:
 
 pub fn main(){
 	let args: Args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
-    
+
     let flag_n : Option<u32> = args.flag_n;
 
     let subsetn : u32 = flag_n.unwrap_or(4);
-    
+
     let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
-    
+
     let path = Path::new(&pathstr);
     let file = match File::open(&path) {
 		Ok(f) => f,
@@ -221,11 +221,11 @@ pub fn main(){
 			_ => panic!("failed to open file: {}", e)
 		}
 	};
-    
+
 	let file = BufReader::new(file);
-	
+
     let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
-    
+
     let lines: Vec<String> = file.lines().map(|orl| {
 		let unwrapl : String = match orl {
 			Ok(l) => l,
@@ -234,9 +234,9 @@ pub fn main(){
 		unwrapl.trim_matches(trimchars).to_string()
 	}).collect();
     let mut wb = WordBuilder::new(lines, subsetn);
-    
+
     println!("Now have a map of length {}", wb.subs.len());
-    
+
     for w in wb.iter(){
         println!("{}",w);
     };
