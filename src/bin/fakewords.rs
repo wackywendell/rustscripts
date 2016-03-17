@@ -1,4 +1,3 @@
-#![feature(collections,exit_status)]
 #![feature(plugin)]
 #![plugin(docopt_macros)]
 
@@ -20,8 +19,6 @@ extern crate rustscripts;
  *  for word prefixes; it then probabilistically follows this to generate
  *  fake words.
 **/
-
-use docopt::Docopt;
 
 use rand::Rng;
 
@@ -113,7 +110,8 @@ impl WordBuilder {
                     let slen = s.chars().count();
                     let klen = k.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
-                    if s.ends_with(k.slice_chars(0, kcut)){
+					let kstart : String = k.chars().take(kcut).collect();
+					if s.ends_with(&kstart){
                         fullsum += *v;
                         if k.ends_with("$") {endsum += *v;}
                         Some((k.as_ref(),*v))
@@ -157,15 +155,15 @@ impl WordBuilder {
                     let klen = k.chars().count();
                     let kcut = if slen < klen - 1 {slen} else {klen - 1};
                     //~ let olds = s.to_string();
-                    s.push_str(k.slice_chars(kcut,klen));
+                    s.push_str(&k[kcut..klen]);
                     break;
                 }
                 psum += v;
             }
 
             let slen = s.chars().count();
-            if s.slice_chars(slen-1, slen) == "$" {
-                return Some(s.slice_chars(1, slen-1).to_string());
+            if &s[slen-1..slen] == "$" {
+                return Some(s[1..slen-1].to_string());
             }
         };
     }
@@ -215,8 +213,7 @@ pub fn main(){
 		Err(e) => match e.kind() {
 			std::io::ErrorKind::NotFound => {
 				let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
-				std::env::set_exit_status(-1);
-				return;
+				std::process::exit(-1);
 			}
 			_ => panic!("failed to open file: {}", e)
 		}

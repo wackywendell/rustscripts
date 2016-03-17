@@ -7,6 +7,7 @@ authors = [ "wackywendell@gmail.com" ]
 [dependencies]
 rustc-serialize = "*"
 rand = "*"
+unicode-segmentation = "*"
 
 [dependencies.docopt]
 git = "https://github.com/docopt/docopt.rs"
