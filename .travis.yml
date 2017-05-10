@@ -4,3 +4,12 @@ rust:
   - stable
   - beta
   - nightly
+
+cache: cargo
+before_script:
+ - cargo install --force rustfmt
+ - cargo install --force clippy
+script:
+ - cargo fmt -- --write-mode=diff
+ - cargo clippy -- -D warnings
+ - cargo test
