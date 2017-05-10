@@ -1,18 +1,6 @@
-#![feature(plugin)]
-#![plugin(docopt_macros)]
-
-extern crate rustc_serialize;
-
-extern crate docopt;
+extern crate getopts;
 extern crate rand;
-
 extern crate rustscripts;
-
-#[warn(non_camel_case_types)]
-#[warn(non_snake_case)]
-#[warn(unused_qualifications)]
-#[warn(non_upper_case_globals)]
-#[warn(missing_docs)]
 
 /** Creates fake words.
  *  First, it uses a predefined list of words to generate a markov chain
@@ -20,9 +8,11 @@ extern crate rustscripts;
  *  fake words.
 **/
 
+use getopts::Options;
 use rand::Rng;
 
 use std::collections::{HashSet,HashMap};
+use std::env;
 use std::fs::File;
 use std::path::Path;
 use std::io::{Write,BufRead,BufReader};
@@ -190,22 +180,45 @@ impl<'a> Iterator for WordIter<'a> {
     }
 }
 
-docopt!(Args, "
-Usage: fakewords2 [-h | --help] [-n <number>] [<dictfile>]
+fn print_usage(program: &str, opts: Options) {
+    let brief = format!("Usage: {} [-h | --help] [-n <number>] [<dictfile>]", program);
+    print!("{}", opts.usage(&brief));
+}
 
-Options:
-    -n <number>    use number length substrings for markovian chain
-    <dictfile>     use dictfile instead of /usr/share/dict/words
-", flag_n : Option<u32>, arg_dictfile : Option<String>);
+// Options:
+//     -n <number>    use number length substrings for markovian chain
+    // <dictfile>     use dictfile instead of /usr/share/dict/words
+// flag_n : Option<u32>, arg_dictfile : Option<String>);
 
 pub fn main(){
-	let args: Args = Args::docopt().decode().unwrap_or_else(|e| e.exit());
+	 let args: Vec<String> = env::args().collect();
+    let program = args[0].clone();
 
-    let flag_n : Option<u32> = args.flag_n;
+    let mut opts = Options::new();
+    opts.optopt("n", "", "use number length substrings for markovian chain", "NUMBER");
+    opts.optflag("h", "help", "print this help menu");
+    let matches = match opts.parse(&args[1..]) {
+        Ok(m) => { m }
+        Err(f) => { panic!(f.to_string()) }
+    };
+    if matches.opt_present("h") {
+        print_usage(&program, opts);
+        return;
+    }
+    let number = matches.opt_str("n");
+    let subsetn : u32 = match number {
+        Some(n_str) => n_str.parse().unwrap_or_else(|e|
+            panic!("Could not parse -n {} as integer", n_str)),
+        None => 4
+    };
 
-    let subsetn : u32 = flag_n.unwrap_or(4);
-
-    let pathstr = args.arg_dictfile.map(|s| {s}).unwrap_or("/usr/share/dict/words".to_string());
+    let pathstr = if matches.free.is_empty() {
+        "/usr/share/dict/words".to_string()
+    } else if matches.free.len() == 1 {
+        matches.free[0].clone()
+    } else {
+        panic!("Only expected one dictfile");
+    };
 
     let path = Path::new(&pathstr);
     let file = match File::open(&path) {

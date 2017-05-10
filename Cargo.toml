@@ -1,16 +1,9 @@
 [package]
-
 name = "rustscripts"
-version = "0.1.0"
+version = "0.2.0"
 authors = [ "wackywendell@gmail.com" ]
 
 [dependencies]
-rustc-serialize = "*"
 rand = "*"
 unicode-segmentation = "*"
-
-[dependencies.docopt]
-git = "https://github.com/docopt/docopt.rs"
-
-[dependencies.docopt_macros]
-git = "https://github.com/docopt/docopt.rs"
+getopts = "*"
