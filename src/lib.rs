@@ -1,5 +1,3 @@
-#![cfg_attr(test, feature(test))]
-
 /// Utility functions for my scripts.
 
 #[warn(non_camel_case_types)]
@@ -7,9 +5,6 @@
 #[warn(unused_qualifications)]
 #[warn(non_upper_case_globals)]
 #[warn(missing_docs)]
-
-#[cfg(test)]
-extern crate test;
 
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};

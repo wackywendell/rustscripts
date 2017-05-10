@@ -21,15 +21,16 @@ use std::convert::AsRef;
 
 use rustscripts::counter;
 
+fn all_lowercase(s: &str) -> bool {
+    !s.find(|c : char|{!c.is_lowercase()}).is_some()
+}
+
 //* Build a HashMap of "substring" : "number of occurrences"
 fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 	println!("Got wordlist, length {}", wordlist.len());
 
 	let iter = wordlist.iter().filter(|k| {
-		if k.chars().count() == 0 {false}
-		else if k.contains("\'") {false}
-		else if k.find(|c : char|{!c.is_lowercase()}).is_some() {false}
-		else {true}
+		k.chars().count() > 0 && !k.contains('\'')  && !all_lowercase(k)
 	});
 	let trimchars : &[char] = &[' ', '\t', '\r', '\n'];
 	let iter = iter.flat_map(|k| {
@@ -38,7 +39,7 @@ fn to_hashes(wordlist : &[String], sublens : u32) -> HashMap<String, u32> {
 
         let chvec : Vec<String> =
 		fullchars.windows(sublens as usize).map(|chars| {
-			chars.iter().map(|&x| x).collect::<String>()
+			chars.iter().clone().collect::<String>()
 		})
 		.collect();
 
@@ -65,7 +66,7 @@ impl WordBuilder {
     fn new(list : Vec<String>, sublens : u32) -> WordBuilder {
         let mut h = HashSet::new();
         let mut wlens : Vec<u32> = Vec::new();
-        for w in list.iter() {
+        for w in &list {
             h.insert(w.to_string());
             let wordlen = w.len();
             for _ in wlens.len()..wordlen+1 {
@@ -103,7 +104,7 @@ impl WordBuilder {
 					let kstart : String = k.chars().take(kcut).collect();
 					if s.ends_with(&kstart){
                         fullsum += *v;
-                        if k.ends_with("$") {endsum += *v;}
+                        if k.ends_with('$') {endsum += *v;}
                         Some((k.as_ref(),*v))
                     } else {None}
                 }
@@ -137,8 +138,8 @@ impl WordBuilder {
 
             let mut psum = 0;
 
-            for &(k,v) in possibilities.iter() {
-                if endtime ^ k.ends_with("$") {continue;};
+            for &(k,v) in &possibilities {
+                if endtime ^ k.ends_with('$') {continue;};
 
                 if randnum < ((psum + v) as f64) {
                     let slen = s.chars().count();
@@ -158,7 +159,7 @@ impl WordBuilder {
         };
     }
 
-    fn iter<'a>(&'a mut self) -> WordIter<'a> {
+    fn iter(&mut self) -> WordIter {
         WordIter{p:self}
     }
 }
@@ -180,7 +181,7 @@ impl<'a> Iterator for WordIter<'a> {
     }
 }
 
-fn print_usage(program: &str, opts: Options) {
+fn print_usage(program: &str, opts: &Options) {
     let brief = format!("Usage: {} [-h | --help] [-n <number>] [<dictfile>]", program);
     print!("{}", opts.usage(&brief));
 }
@@ -202,12 +203,12 @@ pub fn main(){
         Err(f) => { panic!(f.to_string()) }
     };
     if matches.opt_present("h") {
-        print_usage(&program, opts);
+        print_usage(&program, &opts);
         return;
     }
     let number = matches.opt_str("n");
     let subsetn : u32 = match number {
-        Some(n_str) => n_str.parse().unwrap_or_else(|e|
+        Some(n_str) => n_str.parse().unwrap_or_else(|_|
             panic!("Could not parse -n {} as integer", n_str)),
         None => 4
     };
