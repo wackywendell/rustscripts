@@ -49,6 +49,76 @@ fn to_hashes(wordlist: &[String], sublens: u32) -> HashMap<String, u32> {
     counter(iter)
 }
 
+struct ScoredNode {
+    // s is either the full substring if its a start-substring,
+    // "" if its an end-substring,
+    // or just the last character of the substring if its in the middle
+    s: String,
+    // Frequency this was seen in the corpus
+    freq: u32,
+    // Scores is (p(end len 0), p(end len 1), p(end len 2), ...)
+    // Note that scores is equal to [0] + sum(children.scores*chilren.freq) for
+    // substrs that do not end a word, or just [1] for a word ending
+    scores: Vec<u32>,
+}
+
+// sums the children's scores, prepends [0]
+fn score_summer(&Vec<ScoredNode>) -> Vec<u32> {
+    unimplemented!()
+}
+
+// substrs: a map of (substring of length n) -> (frequency in corpus)
+// If it was the beginning of a word, it starts with '^'
+
+// XXX: do we need plens?
+// plens: the frequency distribution we want for word lengths,
+// with the first number being (score for length 0), the second (score for length 1), etc.
+
+// depth: deepest "depth" to go for words, will not get score lists longer than this
+fn scored_tree(substrs: HashMap<String, u32>, plens: Vec<u32>, depth: u32) -> Vec<ScoredNode> {
+    // We start from the back and build up.
+    // partials are maps of {substr[:-1] : next nodes}
+    
+    // ACTUALLY: need [substring -> [next char -> scores]]
+    // in other words, map of (end of what you have so far) -> (possibilities for next character)
+    let mut partials = HashMap<String, Vec<ScoredNode>>;
+    // Put in the endings
+    for (k, v) in substrs {
+        if k.ends_with('$') {
+            let kcut, _ = k.split_at(k.len());
+            partials[kcut.to_string()] = vec!(ScoredNode {
+                s: "",
+                freq: v,
+                scores: vec!(1)
+            })
+        }
+    }
+
+    let mut starts = Vec<ScoredNode>;
+    for _ in 0..d {
+        for (k, v) in substrs {
+            let (c, tail) = k.split_at(1);
+            let nexts = partials.get(tail) {
+                None => continue,
+                Some(ref n) => n,
+            }
+
+            let scores = score_summer(nexts);
+            let nextk, s := k.split_at(k.len() - 1);
+            let node = ScoredNode {
+                s: s,
+                freq: v,
+                scores: scores,
+            }
+
+            // if s already in this spot, need to add the two scores
+
+            let entry = partials.entry(nextk).or_insert(vec!());
+            entry.append(node)
+        }
+    }
+}
+
 struct WordBuilder {
     subs: HashMap<String, u32>,
     // list : Vec<String>,
