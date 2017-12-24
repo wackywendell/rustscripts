@@ -10,8 +10,9 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 
 /// Count the number of occurrences of each value in an iterator
 pub fn counter<K, I>(list: I) -> HashMap<K, u32>
-    where K: Eq + std::hash::Hash,
-          I: Iterator<Item = K>
+where
+    K: Eq + std::hash::Hash,
+    I: Iterator<Item = K>,
 {
     let mut counter: HashMap<K, u32> = HashMap::new();
     for key in list {

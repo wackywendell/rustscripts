@@ -11,11 +11,11 @@ extern crate rustscripts;
 use getopts::Options;
 use rand::Rng;
 
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::File;
 use std::path::Path;
-use std::io::{Write, BufRead, BufReader};
+use std::io::{BufRead, BufReader, Write};
 use std::convert::AsRef;
 //use std::iter::{FromIterator,IteratorExt};
 
@@ -137,10 +137,10 @@ impl WordBuilder {
 
             //~ println!("endtime: {} {} : ({},{}) {}", endtime, randnum < endprob,
             //~ endsum, fullsum, if(endtime){endsum} else {fullsum - endsum});
-            let randnum =
-                rand::thread_rng().gen_range(0.0,
-                                             (if endtime { endsum } else { fullsum - endsum } as
-                                              f64));
+            let randnum = rand::thread_rng().gen_range(
+                0.0,
+                (if endtime { endsum } else { fullsum - endsum } as f64),
+            );
 
             let mut psum = 0;
 
@@ -191,8 +191,10 @@ impl<'a> Iterator for WordIter<'a> {
 }
 
 fn print_usage(program: &str, opts: &Options) {
-    let brief = format!("Usage: {} [-h | --help] [-n <number>] [<dictfile>]",
-                        program);
+    let brief = format!(
+        "Usage: {} [-h | --help] [-n <number>] [<dictfile>]",
+        program
+    );
     print!("{}", opts.usage(&brief));
 }
 
@@ -206,10 +208,12 @@ pub fn main() {
     let program = args[0].clone();
 
     let mut opts = Options::new();
-    opts.optopt("n",
-                "",
-                "use number length substrings for markovian chain",
-                "NUMBER");
+    opts.optopt(
+        "n",
+        "",
+        "use number length substrings for markovian chain",
+        "NUMBER",
+    );
     opts.optflag("h", "help", "print this help menu");
     let matches = match opts.parse(&args[1..]) {
         Ok(m) => m,
@@ -221,11 +225,9 @@ pub fn main() {
     }
     let number = matches.opt_str("n");
     let subsetn: u32 = match number {
-        Some(n_str) => {
-            n_str
-                .parse()
-                .unwrap_or_else(|_| panic!("Could not parse -n {} as integer", n_str))
-        }
+        Some(n_str) => n_str
+            .parse()
+            .unwrap_or_else(|_| panic!("Could not parse -n {} as integer", n_str)),
         None => 4,
     };
 
@@ -240,15 +242,13 @@ pub fn main() {
     let path = Path::new(&pathstr);
     let file = match File::open(&path) {
         Ok(f) => f,
-        Err(e) => {
-            match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
-                    std::process::exit(-1);
-                }
-                _ => panic!("failed to open file: {}", e),
+        Err(e) => match e.kind() {
+            std::io::ErrorKind::NotFound => {
+                let _ = writeln!(&mut std::io::stderr(), "File not found: {}", pathstr);
+                std::process::exit(-1);
             }
-        }
+            _ => panic!("failed to open file: {}", e),
+        },
     };
 
     let file = BufReader::new(file);
@@ -257,12 +257,12 @@ pub fn main() {
 
     let lines: Vec<String> = file.lines()
         .map(|orl| {
-                 let unwrapl: String = match orl {
-                     Ok(l) => l,
-                     Err(e) => panic!("Failed reading file: {}", e),
-                 };
-                 unwrapl.trim_matches(trimchars).to_string()
-             })
+            let unwrapl: String = match orl {
+                Ok(l) => l,
+                Err(e) => panic!("Failed reading file: {}", e),
+            };
+            unwrapl.trim_matches(trimchars).to_string()
+        })
         .collect();
     let mut wb = WordBuilder::new(lines, subsetn);
 
